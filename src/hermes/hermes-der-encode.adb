@@ -126,11 +126,28 @@ package body Hermes.DER.Encode is
       return Boolean_Octet_Array;
    end Put_Boolean_Value;
 
-   
+   --TODO
    function Put_Integer_Value(Value : Integer) return Hermes.Octet_Array is
       Integer_Octet_Array : Hermes.Octet_Array(1 .. 0);
+      Encoded_Int_Arr : Octet_Array(1..4);
+      Leading_Tag : Octet;
+      Length_Arr : Octet_Array(1..5);
    begin   
-      raise Program_Error with "Hermes.DER.Encode.Put_Integer_Value not implemented";
+      case Value is  
+         when 0 .. 127 =>
+            Encoded_Int_Arr := Octet_Array(Value);
+         when 2**8 .. 2**16 - 1 =>
+            Encoded_Int_Arr := Octet_Array(Value/256, Value mod 256);
+         when 2**16 .. 2**24 - 1 => 
+            Encoded_Int_Arr := Octet_Array(Value /256 /256, (Value /256) mod 256, Value mod 256);
+         when others => 
+            Encoded_Int_Arr := Octet_Array(Value /256 /256 /256, (Value /256 /256) mod 256, (Value /256) mod 256, Value mod 256);
+      end case;
+
+
+      Leading_Tag := Make_Leading_Identifier (Tag_Class => Class_Universal, Structured_Flag => Primitive, Tag => Tag_Integer);
+      Length_Arr := Put_Length_Value (Value);
+      Integer_Octet_Array := Leading_Tag & Length_Arr & Encoded_Int_Arr;
       return Integer_Octet_Array;
    end Put_Integer_Value;
    
